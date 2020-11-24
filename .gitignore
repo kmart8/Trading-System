@@ -1,2 +1,18 @@
+# DS Store
+.DS_store
+
+# vscode config files
 .vscode
+
+# pycache
 __pycache__
+
+## Only include necessary files
+# Wenlei
+/Wenlei/*
+!/Wenlei/TRIMA_wenlei_cao_calculate_expectunity.py
+!/Wenlei/TRIMA_wenlei_cao_get_backtrade_result.py
+
+# Anchit
+/Anchit/*
+!/Anchit/GQP_full_AM.py
