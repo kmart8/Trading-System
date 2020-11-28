@@ -8,6 +8,10 @@
 __pycache__
 
 ## Only include necessary files
+# Kevin
+/Kevin/*
+!/Kevin/backtest.py
+
 # Wenlei
 /Wenlei/*
 !/Wenlei/TRIMA_wenlei_cao_calculate_expectunity.py
