@@ -7,7 +7,15 @@
 # pycache
 __pycache__
 
+# results file for calculation
+result.csv
+
 ## Only include necessary files
+# Templates
+/templates/*
+!/templates/index.html
+!/templates/results.html
+
 # Kevin
 /Kevin/*
 !/Kevin/backtest.py
@@ -20,3 +28,7 @@ __pycache__
 # Anchit
 /Anchit/*
 !/Anchit/GQP_full_AM.py
+
+# Jackie
+/Jackie/*
+!/Jackie/Turner_TradingSystemWithBacktrader.py
