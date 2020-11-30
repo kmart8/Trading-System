@@ -78,13 +78,13 @@ def predict_close(stock_name, days_forward, start_date, train_end_date, end_date
         backtrader_data[predicted_indicator_name]/backtrader_data[predicted_indicator_name].shift(days_forward)-1)
 
     # plot data with prediction
-    (backtrader_data[start_date:plot_end_date]
-     [[indicator_name, predicted_indicator_name]]).plot()
-    plt.title(stock_name + ' ' + predicted_indicator_name)
-    plt.show()
+    # (backtrader_data[start_date:plot_end_date]
+    # [[indicator_name, predicted_indicator_name]]).plot()
+    # plt.title(stock_name + ' ' + predicted_indicator_name)
+    # plt.show()
 
     # save csv file for import into backtrader
-    filename = 'backtrader_model_' + stock_name + '.csv'
+    filename = "/Users/kevinmartin/Documents/Fall '20/GQP/Trading System/Jackie/backtrader_model_" + stock_name + '.csv'
     backtrader_data.to_csv(filename)
 
 
@@ -196,6 +196,7 @@ class ModelMultiStrategy(bt.Strategy):
         self.buyprice = 0.00
         self.sellprice = 0.00
         self.size = 0.00
+        self.expect = 0
 
     def notify_order(self, order):
         if order.status in [order.Submitted, order.Accepted]:
@@ -294,8 +295,10 @@ cerebro.addstrategy(ModelMultiStrategy)
 cerebro.addsizer(bt.sizers.SizerFix, stake=stake)
 #cerebro.addsizer(bt.sizers.PercentSizer, percents=5)
 
-if __name__ == '__main__':
-    # def main1():
+# if __name__ == '__main__':
+
+
+def jackie():
     # Run Cerebro Engine
     start_portfolio_value = cerebro.broker.getvalue()
 
@@ -308,7 +311,7 @@ if __name__ == '__main__':
     print('Final Portfolio Value: %.2f' % end_portfolio_value)
     print('PnL: %.2f' % pnl)
 
-    cerebro.plot()
+    # cerebro.plot()
 
 
 # In[ ]:
