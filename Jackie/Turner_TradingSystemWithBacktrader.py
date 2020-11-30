@@ -5,14 +5,13 @@
 
 # In[1]:
 
-
 from matplotlib import warnings
 import matplotlib
-import numpy as np
 import backtrader as bt
-from datetime import datetime as dt
+from datetime import datetime
 from backtrader.feeds import GenericCSVData
 import backtrader.feeds as btfeeds
+import numpy as np
 import datetime
 import pandas as pd
 import yfinance as yf
@@ -20,11 +19,11 @@ from finta import TA
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
-from sklearn.ensemble import RandomForestRegressor
+from sklearn import linear_model
 from matplotlib import pyplot
 import matplotlib.pyplot as plt
 # import to plot in Jupyter
-#get_ipython().run_line_magic('matplotlib', 'inline')
+# get_ipython().run_line_magic('matplotlib', 'inline')
 
 
 def predict_close(stock_name, days_forward, start_date, train_end_date, end_date, plot_end_date):
@@ -49,7 +48,7 @@ def predict_close(stock_name, days_forward, start_date, train_end_date, end_date
     y_column = [indicator_name]
     model_data = data_with_indicators[start_date:
                                       train_end_date][X_columns + y_column]
-    print(stock_name + ' indicator correlation:')
+    #print(stock_name + ' indicator correlation:')
     # display(model_data.corr())
 
     X = model_data.loc[:, model_data.columns != y_column[0]]
@@ -57,17 +56,16 @@ def predict_close(stock_name, days_forward, start_date, train_end_date, end_date
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.15, random_state=0)
 
-    regr = RandomForestRegressor(max_depth=10, random_state=0)
+    regr = linear_model.RidgeCV(alphas=np.logspace(-6, 6, 13))
     regr.fit(X_train, y_train)
     y_pred_train = regr.predict(X_train)
     y_pred = regr.predict(X_test)
 
-    print(stock_name + ' model performance:')
-    print('RMSE_train:', mean_squared_error(
-        y_train, y_pred_train, squared=False))
-    print('R2_train:', r2_score(y_train, y_pred_train))
-    print('RMSE_test:', mean_squared_error(y_test, y_pred, squared=False))
-    print('R2_test:', r2_score(y_test, y_pred))
+    #print(stock_name + ' model performance:')
+    #print('RMSE_train:', mean_squared_error(y_train, y_pred_train, squared=False))
+    #print('R2_train:', r2_score(y_train, y_pred_train))
+    #print('RMSE_test:', mean_squared_error(y_test, y_pred, squared=False))
+    #print('R2_test:', r2_score(y_test, y_pred))
 
     # Add prediction to dataset
     backtrader_data = data_with_indicators
@@ -88,16 +86,21 @@ def predict_close(stock_name, days_forward, start_date, train_end_date, end_date
     backtrader_data.to_csv(filename)
 
 
-# In[19]:
+# In[20]:
 
 
 # Set parameters, run model and generate input data here
-days_forward = 3
-start_date = '1990-01-01'
-train_end_date = '2019-11-22'
-end_date = '2020-11-22'
-plot_end_date = '2020-11-22'
+# CHANGE TIME PERIODS HERE:
 
+start_date = '1990-01-01'
+train_end_date = '2017-10-01'
+end_date = '2020-09-30'
+
+# plot end date for ML plots
+plot_end_date = end_date
+
+# set time period for prediction (i.e days_forward = 3 means predict price in 3 days)
+days_forward = 3
 
 stocks = ['CRM', 'MSFT', 'CDNS']
 for stock_name in stocks:
@@ -107,7 +110,7 @@ for stock_name in stocks:
 
 # ### Backtrader Simulation
 
-# In[20]:
+# In[21]:
 
 
 # Formulas for expectunity calculation
@@ -141,7 +144,7 @@ def expectunity(wins, losses, strat_cal_days):
         return 0
 
 
-# In[21]:
+# In[22]:
 
 
 class GenericCSV_Indicators(GenericCSVData):
@@ -155,8 +158,8 @@ def get_data_with_indicators(filename):
     data = GenericCSV_Indicators(
         dataname=filename,
         # simulation period
-        fromdate=dt(2016, 12, 31),
-        todate=dt(2019, 12, 31),
+        fromdate=datetime.strptime(train_end_date, '%Y-%m-%d'),
+        todate=datetime.strptime(end_date, '%Y-%m-%d'),
         nullvalue=0.0,
         dtformat=('%Y-%m-%d'),
         datetime=0,
@@ -173,23 +176,29 @@ def get_data_with_indicators(filename):
     return data
 
 
-# In[22]:
+# In[56]:
 
 
 class ModelMultiStrategy(bt.Strategy):
 
-    #params = (('pfast',20),('pslow',50),)
+    # profit tolerance is the percent profit earned in order to close a trade (i.e. 0.1 = close after price goes up 1%)
+    params = dict(profit_tolerance=0.01)
+
     def log(self, txt, dt=None):
         dt = dt or self.datas[0].datetime.date(0)
         print('%s, %s' % (dt.isoformat(), txt))
 
     def __init__(self):
         self.dataclose = self.datas[0].close
+
         # Order variable will contain ongoing order details/status
         self.order = None
+        # Track which/whether stock is in the market
         self.inmarket = False
         self.inmarketdataindex = None
-        # Wins/Losses, prices and trading days for expectunity
+        self.inmarketstock = None
+
+        # Wins/Losses, prices and trading days for expectunity calcs
         self.wins = []
         self.losses = []
         self.firsttradedate = None
@@ -212,12 +221,15 @@ class ModelMultiStrategy(bt.Strategy):
                 self.buyprice = order.executed.price
                 self.inmarket = True
                 self.size = order.size
-                self.log('trade size: %.2f' % self.size)
-                self.log('BUY EXECUTED, %.2f' % order.executed.price)
+                self.log('%s TRADE SIZE: %.0f' %
+                         (self.inmarketstock, self.size))
+                self.log('%s BUY EXECUTED: %.2f' %
+                         (self.inmarketstock, order.executed.price))
             elif order.issell():
                 self.sellprice = order.executed.price
                 self.inmarket = False
-                self.log('SELL EXECUTED, %.2f' % order.executed.price)
+                self.log('%s SELL EXECUTED: %.2f' %
+                         (self.inmarketstock, order.executed.price))
 
                 ##########################################
                 # EXPECTUNITY:
@@ -232,8 +244,8 @@ class ModelMultiStrategy(bt.Strategy):
                 currentdate = self.datas[0].datetime.date(0)
                 tradingdays = (currentdate - self.firsttradedate).days
                 expect = expectunity(self.wins, self.losses, tradingdays)
-                self.log('trade pnl %.2f, winnings %.2f, #wins %d, losses %.2f, #losses %d, calendar days %d, expectunity %.2f' %
-                         (winloss, sum(self.wins), len(self.wins), sum(self.losses), len(self.losses), tradingdays, expect))
+                self.log('%s TRADE PNL %.2f, WINNINGS %.2f, #WINS %d, LOSSES %.2f, #LOSSES %d, #TOTAL TRADES %d, CALENDAR DAYS %d, EXPECTUNITY %.2f' %
+                         (self.inmarketstock, winloss, sum(self.wins), len(self.wins), sum(self.losses), len(self.losses), len(self.losses) + len(self.wins), tradingdays, expect))
                 ##########################################
 
             self.bar_executed = len(self)
@@ -255,35 +267,55 @@ class ModelMultiStrategy(bt.Strategy):
             if max(pred_changes) > 0:
                 self.inmarketdataindex = np.argmax(pred_changes)
                 d = self.datas[self.inmarketdataindex]
-
-                self.log('BUY CREATE, %.2f' % d.close[0])
+                self.inmarketstock = self.datas[self.inmarketdataindex]._name
+                self.log('%s BUY CREATE: %.2f' %
+                         (self.inmarketstock, d.close[0]))
                 # Keep track of the created order to avoid a 2nd order
                 self.order = self.buy(data=d)
 
                 return
 
         # We are already in the market, look for a signal to CLOSE trades
-        elif len(self) >= (self.bar_executed + 3):
-            self.log('CLOSE CREATE, %.2f' %
-                     self.datas[self.inmarketdataindex].close[0])
-            self.order = self.sell(data=self.datas[self.inmarketdataindex])
+        else:
+            # EXIT CONDITION #1: Sell if profit % above tolerance
+            profit = 0
+            if (self.buyprice != 0):
+                profit = (
+                    self.datas[self.inmarketdataindex].close[0] - self.buyprice) / self.buyprice
+            # if profit % above tolerance, sell
+            if (profit > self.params.profit_tolerance):
+                self.log('%s CLOSE CREATE - PROFIT TOLERANCE: %.2f' %
+                         (self.inmarketstock, self.datas[self.inmarketdataindex].close[0]))
+                self.order = self.sell(data=self.datas[self.inmarketdataindex])
+            # EXIT CONDITION #2: Always close after 3 days regardless of profit
+            elif (len(self) >= (self.bar_executed + 3)):
+                self.log('%s CLOSE CREATE - MAX DAYS: %.2f' %
+                         (self.inmarketstock, self.datas[self.inmarketdataindex].close[0]))
+                self.order = self.sell(data=self.datas[self.inmarketdataindex])
 
 
-# In[23]:
-
+# In[58]:
 # Run Simulation:
 
-# fix stake
-stake = 10
+cerebro = bt.Cerebro()
 
-# import files for each stock
+# Default position size
+
+# Fixed number of shares (i.e.#fixed_stake = 10, trade 10 shares every time )
+#fixed_stake = 10
+#cerebro.addsizer(bt.sizers.SizerFix, stake=stake)
+
+# Fixed percentage of portfolio (i.e. percentage_stake = 15, trade 15% of portfolio value)
+percentage_stake = 10
+cerebro.addsizer(bt.sizers.PercentSizer, percents=percentage_stake)
+
+# import data files for each stock
 datalist = [
     ('backtrader_model_CRM.csv', 'CRM'),
     ('backtrader_model_MSFT.csv', 'MSFT'),
     ('backtrader_model_CDNS.csv', 'CDNS'),
 ]
 
-cerebro = bt.Cerebro()
 for i in range(len(datalist)):
     data = get_data_with_indicators(filename=datalist[i][0])
     cerebro.adddata(data, name=datalist[i][1])
@@ -292,6 +324,7 @@ for i in range(len(datalist)):
 cerebro.addstrategy(ModelMultiStrategy)
 
 # Default position size
+stake = 10
 cerebro.addsizer(bt.sizers.SizerFix, stake=stake)
 #cerebro.addsizer(bt.sizers.PercentSizer, percents=5)
 
@@ -312,9 +345,3 @@ def jackie():
     print('PnL: %.2f' % pnl)
 
     # cerebro.plot()
-
-
-# In[ ]:
-
-
-# In[ ]:
