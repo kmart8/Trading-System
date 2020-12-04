@@ -57,7 +57,7 @@ clf = clf.fit(train, trainDirection)
 class SVMStrategy(bt.Strategy):
 
     params = (
-        ('stake', 1000),
+        ('stake', 100),
     )
 
     def log(self, txt, dt=None):
@@ -166,7 +166,7 @@ def backtest():
 
     cerebro = bt.Cerebro()
 
-    cerebro.broker.setcash(1000000.0)
+    cerebro.broker.setcash(30000.0)
     cerebro.addstrategy(SVMStrategy)
 
     # Add Data
