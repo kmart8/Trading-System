@@ -11,7 +11,7 @@ from Kevin.backtest import *
 from Wenlei.TRIMA_wenlei_cao_get_backtrade_result import *
 
 # Jackie's files
-# from Jackie.Turner_TradingSystemWithBacktrader import *
+from Jackie.Turner_TradingSystemWithBacktrader import *
 
 # Jordan's files
 
@@ -58,15 +58,16 @@ def results():
     backtest()
     expectunityKevin = combined_expectunity_calcuation(
         "/Users/kevinmartin/Documents/Fall '20/GQP/Trading System/result.csv", 1000)
-    r.append(Result("AMD", 30000, 25000, 5000, 0.05, expectunityKevin))
+    r.append(Result("Electronics", 30000, 31136,
+                    1136, 0.0378, expectunityKevin))
 
     main()
     expectunityWenlei = combined_expectunity_calcuation(
         "/Users/kevinmartin/Documents/Fall '20/GQP/Trading System/result.csv", 100)
     r.append(Result("Mutual Funds", 30000, 46758,
-                    16758, 16758/30000, expectunityWenlei))
-    # jackie()
-
+                    16758, 16758/30000, 1))
+    jackie()
+    r.append(Result("ESG Stocks", 10000, 11483.60, 1483.60, 0.14836, 17.81))
     resultsTable = ResultsTable(r)
     return render_template("results.html", expectunityKevin=Markup(expectunityKevin),
                            expectunityWenlei=Markup(expectunityWenlei),

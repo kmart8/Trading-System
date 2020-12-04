@@ -12,7 +12,7 @@ from datetime import datetime
 from backtrader.feeds import GenericCSVData
 import backtrader.feeds as btfeeds
 import numpy as np
-import datetime
+from datetime import datetime
 import pandas as pd
 import yfinance as yf
 from finta import TA
@@ -311,9 +311,9 @@ cerebro.addsizer(bt.sizers.PercentSizer, percents=percentage_stake)
 
 # import data files for each stock
 datalist = [
-    ('backtrader_model_CRM.csv', 'CRM'),
-    ('backtrader_model_MSFT.csv', 'MSFT'),
-    ('backtrader_model_CDNS.csv', 'CDNS'),
+    ("/Users/kevinmartin/Documents/Fall '20/GQP/Trading System/Jackie/backtrader_model_CRM.csv", 'CRM'),
+    ("/Users/kevinmartin/Documents/Fall '20/GQP/Trading System/Jackie/backtrader_model_MSFT.csv", 'MSFT'),
+    ("/Users/kevinmartin/Documents/Fall '20/GQP/Trading System/Jackie/backtrader_model_CDNS.csv", 'CDNS'),
 ]
 
 for i in range(len(datalist)):
@@ -345,3 +345,5 @@ def jackie():
     print('PnL: %.2f' % pnl)
 
     # cerebro.plot()
+
+# %%
