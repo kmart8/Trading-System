@@ -174,7 +174,7 @@ def backtest():
     stock = yf.Ticker("AMD")
 
     # Clean Data
-    data = stock.history(start="2018-12-19", end="2020-02-06", interval="1h")
+    data = stock.history(start="2019-02-19", end="2020-02-19", interval="1h")
     data = data.drop(columns=["Dividends", "Stock Splits"])
     data = data[data.Volume != 0]
 
