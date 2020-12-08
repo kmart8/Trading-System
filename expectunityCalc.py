@@ -61,8 +61,8 @@ def combined_expectunity_calcuation(path, NumnberofShare):
 
 
 # calculate expectunity
-print((combined_expectunity_calcuation(
-    "/Users/kevinmartin/Documents/Fall '20/GQP/Trading System/Kevin/result.csv", 1000)))
+# print((combined_expectunity_calcuation(
+#     "/Users/kevinmartin/Documents/Fall '20/GQP/Trading System/Kevin/result.csv", 1000)))
 
 
 # In[ ]:

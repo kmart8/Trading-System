@@ -1,3 +1,4 @@
+from sklearn.decomposition import PCA
 import backtrader as bt
 import base64
 from io import BytesIO
@@ -41,6 +42,10 @@ for i in df.iterrows():
     else:
         l.append(0)
 df["Direction"] = l
+
+pca = PCA(n_components=5)
+pca.fit(df.drop(columns="Direction"))
+df1 = pd.DataFrame(pca.transform(df.drop(columns="Direction")))
 
 train = df[0:round(p*df.shape[0])].drop(columns=["Direction",
                                                  "close", "low", "high", "volume"])
@@ -94,19 +99,11 @@ class SVMStrategy(bt.Strategy):
                     self.dataclose1[-1] >= self.chan_exit_l[-1] and \
                     self.rsa <= 35:
 
-                # self.log('BUY CREATE, price=%.2f  %.2f' % (
-                #     self.dataclose1[0],
-                #     # self.chan_exit_l[0],
-                #     self.rsa[0],
-                # ))
                 global temp
                 temp = self.dataclose1[0]
                 self.buy()
         else:
-            # We are already in the market, look for a signal to CLOSE trades
-            # if len(self) >= (self.bar_executed + 5):
-            #     self.log(f'CLOSE CREATE {self.dataclose1[0]:2f}')
-            #     self.order = self.close()
+
             if self.dataclose1[0] >= temp * 1.03:
                 # self.log(f'CLOSE CREATE {self.dataclose1[0]:2f}')
                 self.order = self.close()
